@@ -1,2 +1,2 @@
-# hadening-wp
+# hardening-wp
 Auto Hardening wordpress
