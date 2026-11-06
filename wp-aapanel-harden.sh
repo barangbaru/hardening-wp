@@ -144,7 +144,46 @@ else
   /etc/init.d/nginx reload
   echo "✅ Nginx berhasil diinjeksi dan di-reload."
 fi
+echo "------------------------------------------"
+echo "⏳ Menjalankan Proteksi Massal XML-RPC & API untuk SEMUA Website..."
 
+# Direktori vhost Nginx aaPanel
+VHOST_DIR="/www/server/panel/vhost/nginx"
+
+# Looping ke semua file .conf di dalam folder vhost
+for NGINX_CONF in "$VHOST_DIR"/*.conf; do
+  
+  # Skip jika file bukan file reguler
+  [ -f "$NGINX_CONF" ] || continue
+
+  # Cek apakah sudah pernah diinjeksi
+  if grep -q "WP-GLOBAL-PROTECT" "$NGINX_CONF"; then
+    echo "⏭️  Skip: $(basename "$NGINX_CONF") sudah terproteksi."
+  else
+    echo "🔒 Mengunci: $(basename "$NGINX_CONF")..."
+    
+    # Inject aturan blokir
+    awk '/include enable-php/{
+        print "    # [WP-GLOBAL-PROTECT]"
+        print "    # Blokir total XML-RPC (Cegah DDoS & Brute-force)"
+        print "    location = /xmlrpc.php {"
+        print "        deny all;"
+        print "        access_log off;"
+        print "        log_not_found off;"
+        print "    }"
+        print "    # Blokir REST API spesifik untuk rute enumerasi user (Mencegah pencurian username)"
+        print "    location ~ ^/wp-json/wp/v2/users {"
+        print "        deny all;"
+        print "        access_log off;"
+        print "        log_not_found off;"
+        print "    }"
+    }1' "$NGINX_CONF" > "${NGINX_CONF}.tmp" && mv "${NGINX_CONF}.tmp" "$NGINX_CONF"
+  fi
+done
+
+# Muat ulang Nginx untuk menerapkan semua perubahan
+/etc/init.d/nginx reload
+echo "✅ Proteksi massal XML-RPC dan API berhasil diterapkan ke seluruh website!"
 echo "=========================================="
 echo " 🎉 SEMUA PROSES HARDENING SELESAI! 🎉 "
 echo "=========================================="
