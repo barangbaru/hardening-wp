@@ -37,4 +37,4 @@ Sebelum menjalankan skrip ini, pastikan Anda memiliki:
 Jalankan perintah ini di terminal server Anda untuk mengunduh dan mengeksekusi skrip secara otomatis:
 
 ```bash
-bash <(curl -sL [https://raw.githubusercontent.com/barangbaru/hardening-wp/refs/heads/main/wp-aapanel-harden.sh](https://raw.githubusercontent.com/barangbaru/hardening-wp/refs/heads/main/wp-aapanel-harden.sh))
+bash <(curl -sL https://raw.githubusercontent.com/barangbaru/hardening-wp/refs/heads/main/wp-aapanel-harden.sh)
