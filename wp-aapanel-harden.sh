@@ -45,10 +45,14 @@ echo "⏳ [2/4] Setup Telegram File Monitor..."
 apt-get update -qq
 apt-get install inotify-tools curl awk -y -qq
 
-# Buat file script monitor
-cat << EOF > /root/monitor-file.sh
+# Cek apakah script monitor sudah ada
+if [ -f "/root/monitor-file.sh" ]; then
+  echo "⚠️  Script /root/monitor-file.sh sudah ada. Melompati pembuatan file."
+else
+  echo "⏳ Membuat /root/monitor-file.sh baru..."
+  cat << EOF > /root/monitor-file.sh
 #!/bin/bash
-TARGET_DIR="/www/wwwroot"
+TARGET_DIR="${WP_DIR}"
 TOKEN="${TG_TOKEN}"
 CHAT_ID="${TG_CHAT_ID}"
 SERVER_HOSTNAME=\$(hostname)
@@ -57,7 +61,6 @@ SERVER_IP=\$(curl -s --max-time 3 ipv4.icanhazip.com || hostname -I | awk '{prin
 inotifywait -m -r -e modify,create,delete,move -q --format '%e %w%f' "\$TARGET_DIR" |
 while read EVENT FILE; do
     if [[ "\$FILE" =~ \.(php|html)$ ]]; then
-        # Abaikan perubahan pada folder cache (opsional/pengamanan)
         if [[ "\$FILE" == *"wp-content/cache"* ]]; then continue; fi
         
         WAKTU=\$(date +'%Y-%m-%d %H:%M:%S')
@@ -70,8 +73,8 @@ while read EVENT FILE; do
     fi
 done
 EOF
-
-chmod +x /root/monitor-file.sh
+  chmod +x /root/monitor-file.sh
+fi
 
 # Buat dan aktifkan Systemd Service
 cat << EOF > /etc/systemd/system/telegram-monitor.service
