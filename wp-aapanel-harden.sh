@@ -90,7 +90,7 @@ echo "------------------------------------------"
 echo "⏳ Menjalankan Proteksi Massal XML-RPC & API untuk SEMUA Website..."
 
 # Direktori vhost Nginx aaPanel
-VHOST_DIR="/www/server/panel/vhost/nginx"
+VHOST_DIR="/www/server/panel/vhost/nginx/${DOMAIN_NAME}.conf"
 
 # Looping ke semua file .conf di dalam folder vhost
 for NGINX_CONF in "$VHOST_DIR"/*.conf; do
