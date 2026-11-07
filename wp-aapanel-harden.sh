@@ -40,65 +40,7 @@ systemctl restart systemd-timesyncd
 echo "✅ Timezone diatur ke Asia/Jakarta (WIB)."
 
 echo "------------------------------------------"
-echo "⏳ [2/4] Setup Telegram File Monitor..."
-# Instal dependensi jika belum ada
-apt-get update -qq
-apt-get install inotify-tools curl awk -y -qq
 
-# Cek apakah script monitor sudah ada
-if [ -f "/root/monitor-file.sh" ]; then
-  echo "⚠️  Script /root/monitor-file.sh sudah ada. Melompati pembuatan file."
-else
-  echo "⏳ Membuat /root/monitor-file.sh baru..."
-  cat << EOF > /root/monitor-file.sh
-#!/bin/bash
-TARGET_DIR="${WP_DIR}"
-TOKEN="${TG_TOKEN}"
-CHAT_ID="${TG_CHAT_ID}"
-SERVER_HOSTNAME=\$(hostname)
-SERVER_IP=\$(curl -s --max-time 3 ipv4.icanhazip.com || hostname -I | awk '{print \$1}')
-
-inotifywait -m -r -e modify,create,delete,move -q --format '%e %w%f' "\$TARGET_DIR" |
-while read EVENT FILE; do
-    if [[ "\$FILE" =~ \.(php|html)$ ]]; then
-        if [[ "\$FILE" == *"wp-content/cache"* ]]; then continue; fi
-        
-        WAKTU=\$(date +'%Y-%m-%d %H:%M:%S')
-        PESAN="🚨 *PERINGATAN PERUBAHAN FILE!*%0A%0A*Server:* \`\$SERVER_HOSTNAME\`%0A*IP:* \`\$SERVER_IP\`%0A*Waktu:* \$WAKTU%0A*Aksi:* \`\$EVENT\`%0A*File:* \`\$FILE\`"
-        
-        curl -s -X POST "https://api.telegram.org/bot\$TOKEN/sendMessage" \
-            -d chat_id="\$CHAT_ID" \
-            -d text="\$PESAN" \
-            -d parse_mode="Markdown" > /dev/null
-    fi
-done
-EOF
-  chmod +x /root/monitor-file.sh
-fi
-
-# Buat dan aktifkan Systemd Service
-cat << EOF > /etc/systemd/system/telegram-monitor.service
-[Unit]
-Description=Real-time File Integrity Monitor Telegram
-After=network.target
-
-[Service]
-Type=simple
-User=root
-ExecStart=/bin/bash /root/monitor-file.sh
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable telegram-monitor.service --now
-systemctl restart telegram-monitor.service
-echo "✅ Telegram Monitor berjalan di background (Service aktif)."
-
-echo "------------------------------------------"
 echo "⏳ [3/4] Eksekusi Immutable Hardening (chown & chattr)..."
 cd "$WP_DIR"
 
